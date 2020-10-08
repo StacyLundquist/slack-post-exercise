@@ -2,25 +2,28 @@
 require 'httparty'
 
 module SlackApiWrapper
-  BASE_URL = 'https://slack.com/api'
+  BASE_URL = 'https://stacymona.slack.com/api'
   API_KEY = ENV['SLACK_TOKEN']
 
+  class SlackApiError < StandardError; end
+
   def self.send_msg(message, channel)
+
     response = HTTParty.post(
-      "#{BASE_URL}/chat.postMessage",
-      body: {
-        token: API_KEY,
-        text: message,
-        channel: channel
-      },
-      headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
+        "#{BASE_URL}/chat.postMessage",
+        body: {
+          token: API_KEY,
+          text: message,
+          channel: channel
+        },
+        headers: { 'Content-Type' => 'application/x-www-form-urlencoded' }
     )
 
-    if response.code != 200 || response["ok"] == false
-      raise StandardError, "there is a problem: #{response['error']}"
+    unless response.code == 200 && response.parsed_response["ok"]
+      raise SlackApiError, "Error when posting #{message} to #{channel}, error: #{response.parsed_response["error"]}"
     end
-    return response.code == 200 && response.parsed_response['ok']
 
+    return true
   end
 
 end
